@@ -4,7 +4,8 @@ data Lienzo = MkLienzo (Int, Int) [[Char]]
 type Posicion = (Int, Int)
 
 instance (Show Lienzo) where
-    show (MkLienzo (x, y) z) = foldl (++) [] [take (y+1) $ repeat '*', "*\n*", concatMap (++ "*\n*") z, (take (y+1) $ repeat '*')]
+    show (MkLienzo (x, y) z) = foldl (++) [] 
+        [take (y+1) $ repeat '*', "*\n*", concatMap (++ "*\n*") z, (take (y+1) $ repeat '*')]
 
 lienzoValido :: Lienzo -> Bool
 lienzoValido (MkLienzo (0, m) []) = True -- ??
@@ -42,12 +43,12 @@ dibujarLinea lienzo pos ang l c = dibujarPuntos lienzo (obtenerLinea pos ang l) 
 -- Punto inicial -> Angulo -> Longitud -> Puntos de la linea
 obtenerLinea :: Posicion -> Float -> Int -> [Posicion]
 obtenerLinea (x,y) ang falta
-    | falta > 0 = posicionNueva : obtenerLinea (x,y) ang (falta-1)
-    | falta == 0 = []
+    | falta > 0 =  posicionNueva : obtenerLinea (x,y) ang (falta-1)
+    | falta == 0 = [posicionNueva]
     | falta < 0 = error "La longitud es negativa"
         where falta' = fromIntegral falta
-              posicionNueva = (truncate $ fromIntegral x - falta' * sin ang, 
-                               truncate $ fromIntegral y + falta' * cos ang)
+              posicionNueva = (round $ fromIntegral x - falta' * sin ang, 
+                               round $ fromIntegral y + falta' * cos ang)
 
 dibujarPuntos :: Lienzo -> [Posicion] -> Char -> Lienzo
 dibujarPuntos lienzo@(MkLienzo (x, y) lista) ((x1, y1):xs) c
@@ -55,11 +56,16 @@ dibujarPuntos lienzo@(MkLienzo (x, y) lista) ((x1, y1):xs) c
     | otherwise = dibujarPuntos (dibujarPunto lienzo (x1, y1) c) xs c
 dibujarPuntos lienzo [] _ = lienzo
 
---dibujarCirculo :: Lienzo -> Posicion -> Int -> Char -> Lienzo
---dibujarCirculo lienzo pos r c = dibujarPuntos (obtenerCircunferencia pos r 360)
---
---obtenerCirc :: Posicion -> Int -> Int -> [Posicion]
---obtenerCirc (x,y) r ang = ()
---x(t) = -1 + r*cos(t)
---y(y) = -1 + r*sen(t)  
---
+dibujarCirculo :: Lienzo -> Posicion -> Int -> Char -> Lienzo
+dibujarCirculo lienzo pos r c = dibujarPuntos lienzo (obtenerCirc pos r 360) c
+
+obtenerCirc :: Posicion -> Int -> Int -> [Posicion]
+obtenerCirc (x,y) r falta
+    | falta > 0 =  posicionNueva : obtenerCirc (x,y) r (falta-1)
+    | falta == 0 = [posicionNueva]
+    | falta < 0 = error "La longitud es negativa"
+        where falta' = fromIntegral falta
+              r' = fromIntegral r
+              posicionNueva = (round $ fromIntegral x + r' * sin falta', 
+                               round $ fromIntegral y + r' * cos falta')
+
