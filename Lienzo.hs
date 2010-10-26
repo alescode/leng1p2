@@ -1,11 +1,23 @@
-import Debug.Trace
+module Lienzo (Lienzo,
+               Posicion,
+               dimensiones,
+               lienzoValido,
+               lienzoVacio,
+               lienzoNuevo,
+               dibujarPunto,
+               obtenerColor,
+               dibujarLinea,
+               dibujarCirculo,
+               llenar) where
 
-data Lienzo = MkLienzo (Int, Int) [[Char]]
+data Lienzo = MkLienzo { dimensiones :: (Int, Int),
+                         matriz :: [[Char]] }
+
 type Posicion = (Int, Int)
 
 instance (Show Lienzo) where
-    show (MkLienzo (x, y) z) = foldl (++) [] 
-        [take (y+1) $ repeat '*', "*\n*", concatMap (++ "*\n*") z, (take (y+1) $ repeat '*')]
+    show (MkLienzo (x, y) z) = foldl (++) []
+     [take (y+1) $ repeat '*', "*\n*", concatMap (++ "*\n*") z, (take (y+1) $ repeat '*')]
 
 lienzoValido :: Lienzo -> Bool
 lienzoValido (MkLienzo (0, m) []) = True -- ??
@@ -13,12 +25,14 @@ lienzoValido (MkLienzo (n + 1, m) lista) = (n + 1 == length lista) &&
                                            (and $ map (\xs -> m == length xs) lista)
 lienzoValido _ = False 
 
-lienzoVacio :: (Int, Int) -> Lienzo
-lienzoVacio (x, y)
+lienzoNuevo :: (Int, Int) -> Char -> Lienzo
+lienzoNuevo (x, y) c
     | x < 0 || y < 0 = error "Las dimensiones del lienzo deben ser no negativas"
-    | otherwise = MkLienzo (x, y) (take x $ repeat $ take y $ repeat ' ') 
+    | otherwise = MkLienzo (x, y) (take x $ repeat $ take y $ repeat c)
+
+lienzoVacio :: (Int, Int) -> Lienzo
+lienzoVacio pos = lienzoNuevo pos ' ' 
                               
-                                    
 --Asumiendo que las coordenadas comienzan en 0 0
 dibujarPunto :: Lienzo -> Posicion -> Char -> Lienzo
 dibujarPunto (MkLienzo (x, y) lista) (x1, y1) c
@@ -52,7 +66,7 @@ obtenerLinea (x,y) ang falta
 
 dibujarPuntos :: Lienzo -> [Posicion] -> Char -> Lienzo
 dibujarPuntos lienzo@(MkLienzo (x, y) lista) ((x1, y1):xs) c
-    | x <= x1 || y <= y1 = dibujarPuntos lienzo xs c
+    | x <= x1 || y <= y1 || x1 < 0 || y1 < 0 = dibujarPuntos lienzo xs c
     | otherwise = dibujarPuntos (dibujarPunto lienzo (x1, y1) c) xs c
 dibujarPuntos lienzo [] _ = lienzo
 
@@ -69,3 +83,15 @@ obtenerCirc (x,y) r falta
               posicionNueva = (round $ fromIntegral x + r' * sin falta', 
                                round $ fromIntegral y + r' * cos falta')
 
+llenar :: Lienzo -> Posicion -> Char -> Lienzo
+llenar lienzo@(MkLienzo (x, y) lista) pos@(x1, y1) c
+        | x <= x1 || y <= y1 || x1 < 0 || y1 < 0 = error "La posición dada se encuentra fuera del lienzo"
+        | otherwise = rellenar lienzo (obtenerColor lienzo pos) pos c
+        
+rellenar :: Lienzo -> Char -> Posicion -> Char -> Lienzo
+rellenar lienzo@(MkLienzo (x, y) lista) c1 pos@(x1, y1) c2
+    | x <= x1 || y <= y1 || x1 < 0 || y1 < 0 || obtenerColor lienzo pos /= c1 = lienzo
+    | 0 <= x1 && x1 <= x && 0 <= y1 && y1 <= y && obtenerColor lienzo pos == c1 = 
+        (rellenar (rellenar (rellenar (rellenar (dibujarPunto lienzo pos c2) c1 
+            (x1 + 1, y1) c2) c1 (x1 - 1, y1) c2) c1 (x1, y1 + 1) c2) c1 (x1, y1 - 1) c2)
+    
