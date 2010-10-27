@@ -10,6 +10,8 @@ module Lienzo (Lienzo,
                dibujarCirculo,
                llenar) where
 
+import Utilidades
+
 data Lienzo = MkLienzo { dimensiones :: (Int, Int),
                          matriz :: [[Char]] }
 
@@ -28,70 +30,74 @@ lienzoValido _ = False
 lienzoNuevo :: (Int, Int) -> Char -> Lienzo
 lienzoNuevo (x, y) c
     | x < 0 || y < 0 = error "Las dimensiones del lienzo deben ser no negativas"
-    | otherwise = MkLienzo (x, y) (take x $ repeat $ take y $ repeat c)
+    | otherwise = MkLienzo (x, y) (take x $ repeat $ take y $ repeat c) -- repeat.take
 
 lienzoVacio :: (Int, Int) -> Lienzo
 lienzoVacio pos = lienzoNuevo pos ' ' 
                               
---Asumiendo que las coordenadas comienzan en 0 0
+obtenerColor :: Lienzo -> Posicion -> Char
+obtenerColor (MkLienzo (x, y) lista) (x1, y1)
+    | x1 >= x || y1 >= y = error "El punto esta fuera del lienzo"
+    | otherwise = lista !! x1 !! y1 
+    
+-- Más compacto? otro reemplazar
 dibujarPunto :: Lienzo -> Posicion -> Char -> Lienzo
 dibujarPunto (MkLienzo (x, y) lista) (x1, y1) c
     | x1 >= x || y1 >= y = error "El punto esta fuera del lienzo"
     | otherwise = MkLienzo (x, y) (sustituirLista lista x1 y1 c)
         where sustituirLista (z:zs) x1 y1 c
-                    | x1 == 0 = (sustituirCaracter z y1 c):zs
+                    | x1 == 0 = (reemplazar c y1 z):zs
                     | otherwise = z:(sustituirLista zs (x1-1) y1 c) 
-                        where sustituirCaracter (w:ws) y1 c
-                                    | y1 == 0 = (c:ws)
-                                    | otherwise = w:(sustituirCaracter ws (y1-1) c)
-                                    
-obtenerColor :: Lienzo -> Posicion -> Char
-obtenerColor (MkLienzo (x, y) lista) (x1, y1)
-    | x1 >= x || y1 >= y = error "El punto esta fuera del lienzo"
-    | otherwise = (lista !! x1) !! y1 
-    
+
+-- Punto inicial -> Angulo -> Longitud -> Puntos de la linea
+obtenerLinea :: Posicion -> Float -> Int -> [Posicion]
+obtenerLinea (x,y) ang l
+    | l > 0 =  posicionNueva : obtenerLinea (x,y) ang (l-1)
+    | l == 0 = [posicionNueva]
+    | l < 0 = error "La longitud es negativa"
+        where posicionNueva = (round $ fromIntegral x - l' * sin ang, 
+                               round $ fromIntegral y + l' * cos ang)
+              l' = fromIntegral l
+
+obtenerCirculo :: Posicion -> Int -> Int -> [Posicion]
+obtenerCirculo (x,y) r l
+    | l > 0 = posicionNueva : obtenerCirculo (x,y) r (l-1)
+    | l == 0 = [posicionNueva]
+    | l < 0 = error "La longitud es negativa"
+        where l' = fromIntegral l
+              r' = fromIntegral r
+              posicionNueva = (round $ fromIntegral x + r' * sin l', 
+                               round $ fromIntegral y + r' * cos l')
+
+-- como hacer esto con map y filter?
+dibujarPuntos :: Lienzo -> [Posicion] -> Char -> Lienzo
+dibujarPuntos lienzo@(MkLienzo (x, y) lista) ((x1, y1):xs) c
+    | fueraDelLienzo = dibujarPuntos lienzo xs c
+    | otherwise = dibujarPuntos (dibujarPunto lienzo (x1, y1) c) xs c
+        where fueraDelLienzo = x <= x1 || y <= y1 || x1 < 0 || y1 < 0
+dibujarPuntos lienzo [] _ = lienzo
+
 -- Punto inicial -> Angulo -> Longitud -> Puntos de la linea
 dibujarLinea :: Lienzo -> Posicion -> Float -> Int -> Char -> Lienzo
 dibujarLinea lienzo pos ang l c = dibujarPuntos lienzo (obtenerLinea pos ang l) c
 
--- Punto inicial -> Angulo -> Longitud -> Puntos de la linea
-obtenerLinea :: Posicion -> Float -> Int -> [Posicion]
-obtenerLinea (x,y) ang falta
-    | falta > 0 =  posicionNueva : obtenerLinea (x,y) ang (falta-1)
-    | falta == 0 = [posicionNueva]
-    | falta < 0 = error "La longitud es negativa"
-        where falta' = fromIntegral falta
-              posicionNueva = (round $ fromIntegral x - falta' * sin ang, 
-                               round $ fromIntegral y + falta' * cos ang)
-
-dibujarPuntos :: Lienzo -> [Posicion] -> Char -> Lienzo
-dibujarPuntos lienzo@(MkLienzo (x, y) lista) ((x1, y1):xs) c
-    | x <= x1 || y <= y1 || x1 < 0 || y1 < 0 = dibujarPuntos lienzo xs c
-    | otherwise = dibujarPuntos (dibujarPunto lienzo (x1, y1) c) xs c
-dibujarPuntos lienzo [] _ = lienzo
-
 dibujarCirculo :: Lienzo -> Posicion -> Int -> Char -> Lienzo
-dibujarCirculo lienzo pos r c = dibujarPuntos lienzo (obtenerCirc pos r 360) c
-
-obtenerCirc :: Posicion -> Int -> Int -> [Posicion]
-obtenerCirc (x,y) r falta
-    | falta > 0 =  posicionNueva : obtenerCirc (x,y) r (falta-1)
-    | falta == 0 = [posicionNueva]
-    | falta < 0 = error "La longitud es negativa"
-        where falta' = fromIntegral falta
-              r' = fromIntegral r
-              posicionNueva = (round $ fromIntegral x + r' * sin falta', 
-                               round $ fromIntegral y + r' * cos falta')
+dibujarCirculo lienzo pos r c = dibujarPuntos lienzo (obtenerCirculo pos r 360) c
 
 llenar :: Lienzo -> Posicion -> Char -> Lienzo
 llenar lienzo@(MkLienzo (x, y) lista) pos@(x1, y1) c
-        | x <= x1 || y <= y1 || x1 < 0 || y1 < 0 = error "La posición dada se encuentra fuera del lienzo"
-        | otherwise = rellenar lienzo (obtenerColor lienzo pos) pos c
-        
-rellenar :: Lienzo -> Char -> Posicion -> Char -> Lienzo
-rellenar lienzo@(MkLienzo (x, y) lista) c1 pos@(x1, y1) c2
-    | x <= x1 || y <= y1 || x1 < 0 || y1 < 0 || obtenerColor lienzo pos /= c1 = lienzo
-    | 0 <= x1 && x1 <= x && 0 <= y1 && y1 <= y && obtenerColor lienzo pos == c1 = 
-        (rellenar (rellenar (rellenar (rellenar (dibujarPunto lienzo pos c2) c1 
-            (x1 + 1, y1) c2) c1 (x1 - 1, y1) c2) c1 (x1, y1 + 1) c2) c1 (x1, y1 - 1) c2)
-    
+        | fueraDelLienzo = error "La posicion se encuentra fuera del lienzo"
+        | otherwise = rellenar lienzo (obtenerColor lienzo pos) c pos
+            where fueraDelLienzo = x <= x1 || y <= y1 || x1 < 0 || y1 < 0 
+
+rellenar :: Lienzo -> Char -> Char -> Posicion -> Lienzo
+rellenar lienzo@(MkLienzo (x, y) lista) c1 c2 pos@(x1, y1)
+    | fueraDelLienzo || obtenerColor lienzo pos /= c1 = lienzo
+    | otherwise = rellenar (
+                    rellenar (
+                      rellenar (
+                        rellenar (dibujarPunto lienzo pos c2) c1 c2 (x1 + 1, y1)
+                      ) c1 c2 (x1 - 1, y1)
+                    ) c1 c2 (x1, y1 + 1)
+                  ) c1 c2 (x1, y1 - 1)
+        where fueraDelLienzo = x <= x1 || y <= y1 || x1 < 0 || y1 < 0    
