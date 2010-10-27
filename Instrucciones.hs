@@ -11,7 +11,7 @@ data Instruccion = Limpiar
                 | DibujarLinea Posicion Posicion
                 | Llenar Posicion 
                 | DibujarCirculo Posicion Magnitud 
---                 | DibujarCurva Posicion Magnitud Magnitud 
+                | DibujarCurva Posicion Magnitud Magnitud 
 --                 | DibujarPoligono [Posicion] Bool 
 --                 | DibujarPoligonoRegular Posicion Integer Integer 
 --                 | Triangularizar [Posicion]
@@ -26,6 +26,6 @@ interpretarComando (lienzo, c) (DibujarLinea (x1, y1) (x2, y2)) = (dibujarLinea 
           hipotenusa = truncate $ sqrt $ fromIntegral ((x1 - x2)^2 + (y1 - y2)^2)
 interpretarComando (lienzo, c) (Llenar pos) = (llenar lienzo pos c, c)
 interpretarComando (lienzo, c) (DibujarCirculo pos r) = (dibujarCirculo lienzo pos r c, c)
---interpretarComando (lienzo, c) (DibujarCurva pos r) = (dibujarCirculo lienzo pos r c, c)
+interpretarComando (lienzo, c) (DibujarCurva pos r l) = (dibujarCurva lienzo pos r l c, c)
 
 --dibujarCirculo (dibujarCirculo (llenar (dibujarCirculo (llenar (lienzoVacio (30,100)) (15,50) 'c') (15,50) 14 ' ') (15,50) ' ') (3, 33) 6 ' ') (3, 67) 6 ' '
