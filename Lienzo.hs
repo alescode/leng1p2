@@ -13,6 +13,7 @@ module Lienzo (Lienzo,
 
 import Utilidades
 import Data.List
+import Debug.Trace
 
 data Lienzo = MkLienzo { dimensiones :: (Int, Int),
                          matriz :: [[Char]] }
@@ -57,15 +58,16 @@ obtenerLinea (x,y) ang l
     | l > 0 =  posicionNueva : obtenerLinea (x,y) ang (l-1)
     | l == 0 = [posicionNueva]
     | l < 0 = error "La longitud es negativa"
-        where posicionNueva = (round $ fromIntegral x - l' * sin ang, 
-                               round $ fromIntegral y + l' * cos ang)
+        where posicionNueva = (truncate $ fromIntegral x - l' * sin ang', 
+                               truncate $ fromIntegral y + l' * cos ang')
               l' = fromIntegral l
+              ang' = aRadianes ang
 
 obtenerCirculo :: Posicion -> Int -> Int -> Int -> [Posicion]
 obtenerCirculo (x,y) r ang fin
     | ang < fin =  posicionNueva : obtenerCirculo (x,y) r (ang + 1) fin
     | ang == fin = [posicionNueva]
-        where ang' = fromIntegral ang
+        where ang' = aRadianes $ fromIntegral ang
               r' = fromIntegral r
               posicionNueva = (round $ fromIntegral x + r' * sin ang', 
                                round $ fromIntegral y + r' * cos ang')
@@ -87,7 +89,6 @@ dibujarCirculo lienzo pos r c
     | r < 0 = error "El radio del circulo debe ser no negativo"
     | otherwise = dibujarPuntos lienzo (obtenerCirculo pos r 0 360) c
 
-
 llenar :: Lienzo -> Posicion -> Char -> Lienzo
 llenar lienzo@(MkLienzo (x, y) lista) pos@(x1, y1) c
         | fueraDelLienzo = error "La posicion se encuentra fuera del lienzo"
@@ -106,6 +107,8 @@ rellenar lienzo@(MkLienzo (x, y) lista) c1 c2 pos@(x1, y1)
                   ) c1 c2 (x1, y1 - 1)
         where fueraDelLienzo = x <= x1 || y <= y1 || x1 < 0 || y1 < 0    
 
+-- Poner bonito desde aqui
+
 eliminarPuntosInnecesarios :: Posicion -> [Posicion] -> [Posicion]
 eliminarPuntosInnecesarios (x, y) ((x1, y1):xs) 
     | x1 > x || x1 < 0 || y1 > y || y1 < 0 = eliminarPuntosInnecesarios (x, y) xs
@@ -114,10 +117,23 @@ eliminarPuntosInnecesarios (x, y) ((x1, y1):xs)
     
 dibujarCurva :: Lienzo -> Posicion -> Int -> Int -> Char -> Lienzo
 dibujarCurva lienzo@(MkLienzo pos1 lista) pos r lon c
-    | lon < 0  || r < 0 = error "Usted ha suministrado una longitud negativa"
+    | lon < 0  || r < 0 = error "La longitud de la curva debe ser no negativa"
     | otherwise = dibujarPuntos lienzo (take lon (eliminarPuntosInnecesarios 
         pos1 (clasificar pos (obtenerCirculo pos r 180 540)))) c
 
 clasificar :: Posicion -> [Posicion] -> [Posicion]
-clasificar (x, y) xs =  (reverse (sort [(x1, y1) | (x1, y1) <- xs, y1 <= y])) ++ sort [(x1, y1) | (x1, y1) <- xs, y1 >= y]
-                
+clasificar (x, y) xs = sortBy (ordenTuplas) [(x1, y1) | (x1, y1) <- xs, x1 >= x]
+                        ++ reverse (sortBy (ordenTuplas) [(x1, y1) | (x1, y1) <- xs, x1 <= x])
+
+dibujarPoligono :: Lienzo -> [Posicion] -> Char -> Lienzo
+dibujarPoligono lienzo@(MkLienzo pos lista) (p@(x1, y1):p2@(x2, y2):ps) c =
+    trace (show $ aGrados alfa) dibujarPoligono (dibujarLinea lienzo p (aGrados alfa) hipotenusa c) (p2:ps) c
+    where alfa = (normalizar x1 y1 x2 y2) * (atan $ (fromIntegral (y1 - y2))/(fromIntegral (x1-x2)))
+          hipotenusa = truncate $ sqrt $ fromIntegral ((x1 - x2)^2 + (y1 - y2)^2)
+
+dibujarPoligono lienzo _ _ = lienzo
+
+--let p1 = (20,15) :: (Int, Int)
+--let p2 = (10,15) :: (Int, Int)
+--let p3 = (15,20) :: (Int, Int)
+--let x = (dibujarPunto (dibujarPunto (dibujarPunto (lienzoVacio (30,30)) (20,15) ('+')) (10,15) '+') (15,20) '+') 
