@@ -1,4 +1,6 @@
 module Utilidades where
+import Data.List
+import Debug.Trace
 
 reemplazar :: a -> Int -> [a] -> [a]
 reemplazar c i (x:xs)
@@ -10,10 +12,10 @@ reemplazar c i (x:xs)
 --           | i == 0 = reverse acum ++ (c:xs)
 --           | otherwise = reemplazar' c (i-1) xs (x:acum)
 --
---reemplazar e pos l = second $ foldl f (0, [], l) l 
+--reemplazar e pos l = second $ foldl' f (0, [], l) l 
 --                    where f (i, lista, t) x
 --                             | i < 0 = (i, lista, t)
---                             | i == pos = (-1, foldl (flip (:)) (e:tail t) lista, [])
+--                             | i == pos = (-1, foldl' (flip (:)) (e:tail t) lista, [])
 --                             | otherwise = (i + 1, x:lista, tail t)
 --                          second (_, x, _) = x
 
@@ -22,9 +24,6 @@ aRadianes = (* (pi/180))
 
 aGrados :: Float -> Float
 aGrados = (* ((180)/pi))
-
-normalizar :: Int -> Int -> Int -> Int -> Float
-normalizar x1 y1 x2 y2 = 1 --if y2 - y1 >= 0 &&
 
 ordenTuplas :: (Ord a, Ord b) => (a, b) -> (a, b) -> Ordering
 ordenTuplas (x, y) (x', y') = case y `compare` y' of

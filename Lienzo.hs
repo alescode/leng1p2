@@ -9,6 +9,7 @@ module Lienzo (Lienzo,
                dibujarLinea,
                dibujarCirculo,
                dibujarCurva,
+               dibujarPoligono,
                llenar) where
 
 import Utilidades
@@ -125,15 +126,16 @@ clasificar :: Posicion -> [Posicion] -> [Posicion]
 clasificar (x, y) xs = sortBy (ordenTuplas) [(x1, y1) | (x1, y1) <- xs, x1 >= x]
                         ++ reverse (sortBy (ordenTuplas) [(x1, y1) | (x1, y1) <- xs, x1 <= x])
 
+{- Traza una linea entre dos puntos p1 y p2, dibujando con el caracter
+- especificado -}
+lineaEntreDosPuntos :: Lienzo -> Posicion -> Posicion -> Char -> Lienzo
+lineaEntreDosPuntos lienzo p1@(x1, y1) p2@(x2,y2) c = 
+    dibujarLinea lienzo p1 (aGrados alfa) hipotenusa c
+     where alfa = if y1 > y2 then a + pi else a 
+           hipotenusa = truncate $ sqrt $ fromIntegral ((x1 - x2)^2 + (y1 - y2)^2)
+           a = (atan $ (fromIntegral (x1-x2))/(fromIntegral (y2-y1)))
+
 dibujarPoligono :: Lienzo -> [Posicion] -> Char -> Lienzo
-dibujarPoligono lienzo@(MkLienzo pos lista) (p@(x1, y1):p2@(x2, y2):ps) c =
-    trace (show $ aGrados alfa) dibujarPoligono (dibujarLinea lienzo p (aGrados alfa) hipotenusa c) (p2:ps) c
-    where alfa = (normalizar x1 y1 x2 y2) * (atan $ (fromIntegral (y1 - y2))/(fromIntegral (x1-x2)))
-          hipotenusa = truncate $ sqrt $ fromIntegral ((x1 - x2)^2 + (y1 - y2)^2)
-
+dibujarPoligono lienzo (p1@(x1, y1):p2@(x2, y2):ps) c =
+    dibujarPoligono (lineaEntreDosPuntos lienzo p1 p2 c) (p2:ps) c
 dibujarPoligono lienzo _ _ = lienzo
-
---let p1 = (20,15) :: (Int, Int)
---let p2 = (10,15) :: (Int, Int)
---let p3 = (15,20) :: (Int, Int)
---let x = (dibujarPunto (dibujarPunto (dibujarPunto (lienzoVacio (30,30)) (20,15) ('+')) (10,15) '+') (15,20) '+') 
