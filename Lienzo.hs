@@ -146,3 +146,13 @@ dibujarContorno lienzo (p0:lista@(_:ps)) c =
     dibujarContorno (lineaEntreDosPuntos lienzo p0 (head listaOrdenada) c) lista c 
      where listaOrdenada = sortBy (ordenAngulo p0) lista
 dibujarContorno lienzo _ _ = lienzo
+
+triangulizar :: Lienzo -> [Posicion] -> Char -> Lienzo
+triangulizar lienzo lista c = triangulizar' lienzo (sort lista) c
+
+triangulizar' :: Lienzo -> [Posicion] -> Char -> Lienzo
+triangulizar' lienzo (pos1:pos2:pos3:posiciones) c =
+    triangulizar' 
+        (lineaEntreDosPuntos (lineaEntreDosPuntos (lineaEntreDosPuntos lienzo pos1 pos2 c) pos1 pos3 c) pos2 pos3 c)
+            (pos2:pos3:posiciones) c
+triangulizar' lienzo _ _ = lienzo
