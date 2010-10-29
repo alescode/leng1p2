@@ -141,5 +141,15 @@ dibujarPoligono lienzo lista@(p1@(x1, y1):p2@(x2, y2):ps) c =
         (dibujarPoligono (lineaEntreDosPuntos lienzo p1 p2 c) (p2:ps) c) (last lista) p1 c  
 dibujarPoligono lienzo _ _ = lienzo
 
+triangulizar :: Lienzo -> [Posicion] -> Char -> Lienzo
+triangulizar lienzo lista c = triangulizar' lienzo (sort lista) c
+
+triangulizar' :: Lienzo -> [Posicion] -> Char -> Lienzo
+triangulizar' lienzo (pos1:pos2:pos3:posiciones) c =
+    triangulizar' 
+        (lineaEntreDosPuntos (lineaEntreDosPuntos (lineaEntreDosPuntos lienzo pos1 pos2 c) pos1 pos3 c) pos2 pos3 c)
+            (pos2:pos3:posiciones) c
+triangulizar' lienzo _ _ = lienzo
+
 --dibujarContorno :: Lienzo -> [Posicion] -> Char -> Lienzo
 --dibujarContorno lienzo p1:p2@(x2, y2):p3@(x3, y3) 
