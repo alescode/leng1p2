@@ -141,5 +141,8 @@ dibujarPoligono lienzo lista@(p1@(x1, y1):p2@(x2, y2):ps) c =
         (dibujarPoligono (lineaEntreDosPuntos lienzo p1 p2 c) (p2:ps) c) (last lista) p1 c  
 dibujarPoligono lienzo _ _ = lienzo
 
---dibujarContorno :: Lienzo -> [Posicion] -> Char -> Lienzo
---dibujarContorno lienzo p1:p2@(x2, y2):p3@(x3, y3) 
+dibujarContorno :: Lienzo -> [Posicion] -> Char -> Lienzo
+dibujarContorno lienzo (p0:lista@(_:ps)) c =
+    dibujarContorno (lineaEntreDosPuntos lienzo p0 (head listaOrdenada) c) lista c 
+     where listaOrdenada = sortBy (ordenAngulo p0) lista
+dibujarContorno lienzo _ _ = lienzo
