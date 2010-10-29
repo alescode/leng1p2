@@ -30,4 +30,7 @@ ordenTuplas (x, y) (x', y') = case y `compare` y' of
                                EQ -> x `compare` x'
                                c -> c
 
+ordenPorAngulo :: (Int, Int) -> (Int, Int) -> (Int, Int) -> Ordering
+ordenPorAngulo (x0, y0) p1@(x1, y1) p2@(x2, y2) = angulo p1 `compare` angulo p2
+           where angulo (x, y) = atan $ (fromIntegral (y-y0))/(fromIntegral (x-x0)) 
 

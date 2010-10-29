@@ -136,6 +136,10 @@ lineaEntreDosPuntos lienzo p1@(x1, y1) p2@(x2,y2) c =
            a = (atan $ (fromIntegral (x1-x2))/(fromIntegral (y2-y1)))
 
 dibujarPoligono :: Lienzo -> [Posicion] -> Char -> Lienzo
-dibujarPoligono lienzo (p1@(x1, y1):p2@(x2, y2):ps) c =
-    dibujarPoligono (lineaEntreDosPuntos lienzo p1 p2 c) (p2:ps) c
+dibujarPoligono lienzo lista@(p1@(x1, y1):p2@(x2, y2):ps) c =
+    lineaEntreDosPuntos 
+        (dibujarPoligono (lineaEntreDosPuntos lienzo p1 p2 c) (p2:ps) c) (last lista) p1 c  
 dibujarPoligono lienzo _ _ = lienzo
+
+--dibujarContorno :: Lienzo -> [Posicion] -> Char -> Lienzo
+--dibujarContorno lienzo p1:p2@(x2, y2):p3@(x3, y3) 
