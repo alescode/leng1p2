@@ -15,6 +15,7 @@ module Lienzo (Lienzo,
 import Utilidades
 import Data.List
 import Debug.Trace
+import Data.Char
 
 -- Tipos de datos y definiciones
 data Lienzo = MkLienzo { dimensiones :: (Int, Int),
@@ -25,7 +26,7 @@ instance (Show Lienzo) where
     show (MkLienzo (x, y) z) = foldl (++) []
      [take (y+1) $ repeat '*', "*\n*", concatMap (++ "*\n*") z, (take (y+1) $ repeat '*')]
 
--- Funciones 
+-- Funciones basicas
 {- Verifica si las dimensiones especificadas en la tupla se corresponden con las
 - dimensiones del lienzo -}
 lienzoValido :: Lienzo -> Bool
@@ -56,6 +57,15 @@ dibujarPunto (MkLienzo (x, y) lista) (x1, y1) c
                     | x1 == 0 = (reemplazar c y1 z):zs
                     | otherwise = z:(sustituirLista zs (x1-1) y1 c) 
 
+-- Dibuja una lista de puntos en el lienzo
+dibujarPuntos :: Lienzo -> [Posicion] -> Char -> Lienzo
+dibujarPuntos lienzo@(MkLienzo (x, y) lista) ((x1, y1):xs) c
+    | fueraDelLienzo = dibujarPuntos lienzo xs c
+    | otherwise = dibujarPuntos (dibujarPunto lienzo (x1, y1) c) xs c
+        where fueraDelLienzo = x <= x1 || y <= y1 || x1 < 0 || y1 < 0
+dibujarPuntos lienzo [] _ = lienzo
+
+-- Funciones para dibujar una linea recta
 -- Punto inicial -> Angulo -> Longitud -> Puntos de la linea
 obtenerLinea :: Posicion -> Float -> Int -> [Posicion]
 obtenerLinea (x,y) ang l
@@ -67,6 +77,10 @@ obtenerLinea (x,y) ang l
               l' = fromIntegral l
               ang' = aRadianes ang
 
+-- Punto inicial -> Angulo -> Longitud -> Puntos de la linea
+dibujarLinea :: Lienzo -> Posicion -> Float -> Int -> Char -> Lienzo
+dibujarLinea lienzo pos ang l c = dibujarPuntos lienzo (obtenerLinea pos ang l) c
+
 obtenerCirculo :: Posicion -> Int -> Int -> Int -> [Posicion]
 obtenerCirculo (x,y) r ang fin
     | ang < fin =  posicionNueva : obtenerCirculo (x,y) r (ang + 1) fin
@@ -75,18 +89,6 @@ obtenerCirculo (x,y) r ang fin
               r' = fromIntegral r
               posicionNueva = (round $ fromIntegral x + r' * sin ang', 
                                round $ fromIntegral y + r' * cos ang')
-
--- como hacer esto con map y filter?
-dibujarPuntos :: Lienzo -> [Posicion] -> Char -> Lienzo
-dibujarPuntos lienzo@(MkLienzo (x, y) lista) ((x1, y1):xs) c
-    | fueraDelLienzo = dibujarPuntos lienzo xs c
-    | otherwise = dibujarPuntos (dibujarPunto lienzo (x1, y1) c) xs c
-        where fueraDelLienzo = x <= x1 || y <= y1 || x1 < 0 || y1 < 0
-dibujarPuntos lienzo [] _ = lienzo
-
--- Punto inicial -> Angulo -> Longitud -> Puntos de la linea
-dibujarLinea :: Lienzo -> Posicion -> Float -> Int -> Char -> Lienzo
-dibujarLinea lienzo pos ang l c = dibujarPuntos lienzo (obtenerLinea pos ang l) c
 
 dibujarCirculo :: Lienzo -> Posicion -> Int -> Char -> Lienzo
 dibujarCirculo lienzo pos r c
@@ -113,8 +115,6 @@ llenar' lienzo@(MkLienzo (x, y) lista) c1 c2 pos@(x1, y1)
                     ) c1 c2 (x1, y1 + 1)
                   ) c1 c2 (x1, y1 - 1)
         where fueraDelLienzo = x <= x1 || y <= y1 || x1 < 0 || y1 < 0    
-
--- Poner bonito desde aqui
 
 eliminarPuntosInnecesarios :: Posicion -> [Posicion] -> [Posicion]
 eliminarPuntosInnecesarios (x, y) ((x1, y1):xs) 
@@ -155,11 +155,15 @@ dibujarLineas lienzo _ _ = lienzo
 dibujarContorno :: Lienzo -> [Posicion] -> Char -> Lienzo
 dibujarContorno lienzo [] _ = lienzo
 dibujarContorno lienzo lista c =
-    lineaEntreDosPuntos
-        (dibujarLineas lienzo listaPorAngulo c) (last listaPorAngulo) p0 c
-     where listaOrdenada = sort lista
+    traceShow (listaPorAngulo) (lineaEntreDosPuntos
+        (dibujarLineas lienzo listaPorAngulo c) (last listaPorAngulo) p0 c)
+     where listaOrdenada = sortBy (ordenTuplas) lista
            p0 = head listaOrdenada
            listaPorAngulo = p0 : (sortBy (ordenAngulo p0) (tail listaOrdenada))
+
+dibujarPoligonoRegular :: Lienzo -> Posicion -> Int -> Int -> Char -> Lienzo
+dibujarPoligonoRegular lienzo posInicial numLados apotema c =
+    (dibujarContorno lienzo (obtenerPuntosPoligono posInicial numLados apotema) c)
 
 triangulizar :: Lienzo -> [Posicion] -> Char -> Lienzo
 triangulizar lienzo lista c = triangulizar' lienzo (sort lista) c
@@ -176,12 +180,16 @@ triangulizar' lienzo (pos1:pos2:pos3:posiciones) c =
 triangulizar' lienzo _ _ = lienzo
 
 obtenerPuntosPoligono :: Posicion -> Int -> Int -> [Posicion]
-obtenerPuntosPoligono p numLados apotema = calcularPuntos centroPoligono radio numLados anguloInicial
-    where anguloAlCentro = -360 / (2* (fromIntegral numLados))
-          radio = round $ (fromIntegral apotema) / (cos $ pi / (fromIntegral numLados))
-          centroPoligono = last . reverse $ obtenerLinea p anguloAlCentro radio
-          anguloInicial = -2*pi / (2* (fromIntegral numLados)) + pi
+obtenerPuntosPoligono p numLados apotema = 
+    calcularPuntos centroPoligono radio anguloCentral anguloInicial numLados
+     where anguloAlCentro = -360 / (2* (fromIntegral numLados))
+           radio = round $ (fromIntegral apotema) / (cos $ pi / (fromIntegral numLados))
+           centroPoligono = last . reverse $ obtenerLinea p anguloAlCentro radio
+           anguloInicial = 90 - anguloAlCentro
+           anguloCentral = 360 / (fromIntegral numLados)
 
--- Primer punto, centro, radio, numero de lados
-calcularPuntos :: Posicion -> Int -> Int -> Float -> [Posicion]
-calcularPuntos centro radio numLados anguloInicial = [(0,0)] 
+calcularPuntos :: Posicion -> Int -> Float -> Float -> Int -> [Posicion]
+calcularPuntos _ _ _ _ 0 = []
+calcularPuntos centro radio anguloCentral angulo numLados = 
+    (last . reverse $ obtenerLinea centro angulo radio) :
+    (calcularPuntos centro radio anguloCentral (angulo + anguloCentral) (numLados-1))
