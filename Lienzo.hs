@@ -16,21 +16,25 @@ import Utilidades
 import Data.List
 import Debug.Trace
 
+-- Tipos de datos y definiciones
 data Lienzo = MkLienzo { dimensiones :: (Int, Int),
                          matriz :: [[Char]] }
-
 type Posicion = (Int, Int)
 
 instance (Show Lienzo) where
     show (MkLienzo (x, y) z) = foldl (++) []
      [take (y+1) $ repeat '*', "*\n*", concatMap (++ "*\n*") z, (take (y+1) $ repeat '*')]
 
+-- Funciones 
+{- Verifica si las dimensiones especificadas en la tupla se corresponden con las
+- dimensiones del lienzo -}
 lienzoValido :: Lienzo -> Bool
-lienzoValido (MkLienzo (0, m) []) = True -- ??
+lienzoValido (MkLienzo (0, m) []) = True
 lienzoValido (MkLienzo (n + 1, m) lista) = (n + 1 == length lista) && 
                                            (and $ map (\xs -> m == length xs) lista)
 lienzoValido _ = False 
 
+{- Inicializa un nuevo lienzo con un caracter especifico -}
 lienzoNuevo :: (Int, Int) -> Char -> Lienzo
 lienzoNuevo (x, y) c
     | x < 0 || y < 0 = error "Las dimensiones del lienzo deben ser no negativas"
@@ -44,7 +48,6 @@ obtenerColor (MkLienzo (x, y) lista) (x1, y1)
     | x1 >= x || y1 >= y = error "El punto esta fuera del lienzo"
     | otherwise = lista !! x1 !! y1 
     
--- Más compacto? otro reemplazar
 dibujarPunto :: Lienzo -> Posicion -> Char -> Lienzo
 dibujarPunto (MkLienzo (x, y) lista) (x1, y1) c
     | x1 >= x || y1 >= y = error "El punto esta fuera del lienzo"
@@ -93,16 +96,19 @@ dibujarCirculo lienzo pos r c
 llenar :: Lienzo -> Posicion -> Char -> Lienzo
 llenar lienzo@(MkLienzo (x, y) lista) pos@(x1, y1) c
         | fueraDelLienzo = error "La posicion se encuentra fuera del lienzo"
-        | otherwise = rellenar lienzo (obtenerColor lienzo pos) c pos
+        | otherwise = llenar' lienzo (obtenerColor lienzo pos) c pos
             where fueraDelLienzo = x <= x1 || y <= y1 || x1 < 0 || y1 < 0 
 
-rellenar :: Lienzo -> Char -> Char -> Posicion -> Lienzo
-rellenar lienzo@(MkLienzo (x, y) lista) c1 c2 pos@(x1, y1)
+{- Auxiliar: Llena un espacio del lienzo en las cuatro direcciones posibles,
+- utilizando informacion del caracter con el que se desea llenar el espacio
+- y el caracter que se encuentra actualmente en cada punto del espacio -}
+llenar' :: Lienzo -> Char -> Char -> Posicion -> Lienzo
+llenar' lienzo@(MkLienzo (x, y) lista) c1 c2 pos@(x1, y1)
     | fueraDelLienzo || obtenerColor lienzo pos /= c1 = lienzo
-    | otherwise = rellenar (
-                    rellenar (
-                      rellenar (
-                        rellenar (dibujarPunto lienzo pos c2) c1 c2 (x1 + 1, y1)
+    | otherwise = llenar' (
+                    llenar' (
+                      llenar' (
+                        llenar' (dibujarPunto lienzo pos c2) c1 c2 (x1 + 1, y1)
                       ) c1 c2 (x1 - 1, y1)
                     ) c1 c2 (x1, y1 + 1)
                   ) c1 c2 (x1, y1 - 1)
@@ -114,7 +120,7 @@ eliminarPuntosInnecesarios :: Posicion -> [Posicion] -> [Posicion]
 eliminarPuntosInnecesarios (x, y) ((x1, y1):xs) 
     | x1 > x || x1 < 0 || y1 > y || y1 < 0 = eliminarPuntosInnecesarios (x, y) xs
     | otherwise = (x1, y1) : eliminarPuntosInnecesarios (x, y) (eliminarIguales (x1, y1) xs)
-        where eliminarIguales (x1, y1) xs = [(x2, y2) | (x2, y2) <- xs, x2 /= x1 || y2 /= y1]
+        where eliminarIguales (x1, y1) xs = filter (\(x2, y2) -> x1 /= x2 || y1 /= y2) xs 
     
 dibujarCurva :: Lienzo -> Posicion -> Int -> Int -> Char -> Lienzo
 dibujarCurva lienzo@(MkLienzo pos1 lista) pos r lon c
@@ -123,8 +129,8 @@ dibujarCurva lienzo@(MkLienzo pos1 lista) pos r lon c
         pos1 (clasificar pos (obtenerCirculo pos r 180 540)))) c
 
 clasificar :: Posicion -> [Posicion] -> [Posicion]
-clasificar (x, y) xs = sortBy (ordenTuplas) [(x1, y1) | (x1, y1) <- xs, x1 >= x]
-                        ++ reverse (sortBy (ordenTuplas) [(x1, y1) | (x1, y1) <- xs, x1 <= x])
+clasificar (x, y) xs = sortBy (ordenTuplas) (filter (\(x1, _) -> x1 >= x) xs)
+                        ++ reverse (sortBy (ordenTuplas) (filter (\(x1, _) -> x1 < x) xs))
 
 {- Traza una linea entre dos puntos p1 y p2, dibujando con el caracter
 - especificado -}
@@ -161,6 +167,15 @@ triangulizar lienzo lista c = triangulizar' lienzo (sort lista) c
 triangulizar' :: Lienzo -> [Posicion] -> Char -> Lienzo
 triangulizar' lienzo (pos1:pos2:pos3:posiciones) c =
     triangulizar' 
-        (lineaEntreDosPuntos (lineaEntreDosPuntos (lineaEntreDosPuntos lienzo pos1 pos2 c) pos1 pos3 c) pos2 pos3 c)
-            (pos2:pos3:posiciones) c
+        (lineaEntreDosPuntos 
+         (lineaEntreDosPuntos 
+          (lineaEntreDosPuntos lienzo pos1 pos2 c) 
+         pos1 pos3 c)
+        pos2 pos3 c)
+        (pos2:pos3:posiciones) c
 triangulizar' lienzo _ _ = lienzo
+
+obtenerPuntosPoligono :: Posicion -> Int -> Int -> Posicion
+obtenerPuntosPoligono p numLados apotema = last . reverse $ obtenerLinea p anguloAlCentro radio
+    where anguloAlCentro = -360 / (2* (fromIntegral numLados))
+          radio = round $ (fromIntegral apotema) / (cos $ pi / (fromIntegral numLados))
