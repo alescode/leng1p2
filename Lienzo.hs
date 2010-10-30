@@ -175,7 +175,13 @@ triangulizar' lienzo (pos1:pos2:pos3:posiciones) c =
         (pos2:pos3:posiciones) c
 triangulizar' lienzo _ _ = lienzo
 
-obtenerPuntosPoligono :: Posicion -> Int -> Int -> Posicion
-obtenerPuntosPoligono p numLados apotema = last . reverse $ obtenerLinea p anguloAlCentro radio
+obtenerPuntosPoligono :: Posicion -> Int -> Int -> [Posicion]
+obtenerPuntosPoligono p numLados apotema = calcularPuntos centroPoligono radio numLados anguloInicial
     where anguloAlCentro = -360 / (2* (fromIntegral numLados))
           radio = round $ (fromIntegral apotema) / (cos $ pi / (fromIntegral numLados))
+          centroPoligono = last . reverse $ obtenerLinea p anguloAlCentro radio
+          anguloInicial = -2*pi / (2* (fromIntegral numLados)) + pi
+
+-- Primer punto, centro, radio, numero de lados
+calcularPuntos :: Posicion -> Int -> Int -> Float -> [Posicion]
+calcularPuntos centro radio numLados anguloInicial = [(0,0)] 
