@@ -7,11 +7,12 @@ module Lienzo (Lienzo,
                dibujarPunto,
                obtenerColor,
                dibujarLinea,
+               lineaEntreDosPuntos,
                dibujarCirculo,
                dibujarCurva,
                dibujarPoligono,
                dibujarPoligonoRegular,
-               dibujarStrip
+               dibujarStrip,
                llenar) where
 
 import Utilidades
