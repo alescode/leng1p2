@@ -1,5 +1,4 @@
 module Utilidades where
-import Data.List
 
 reemplazar :: a -> Int -> [a] -> [a]
 reemplazar c i (x:xs)
@@ -20,4 +19,3 @@ ordenTuplas (x, y) (x', y') = case y `compare` y' of
 ordenAngulo :: (Int, Int) -> (Int, Int) -> (Int, Int) -> Ordering
 ordenAngulo (x0, y0) p1@(x1, y1) p2@(x2, y2) = angulo p1 `compare` angulo p2
            where angulo (x, y) = atan $ (fromIntegral (x0-x))/(fromIntegral (y-y0))
-
