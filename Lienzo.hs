@@ -10,11 +10,12 @@ module Lienzo (Lienzo,
                dibujarCirculo,
                dibujarCurva,
                dibujarPoligono,
+               dibujarPoligonoRegular,
+               dibujarStrip
                llenar) where
 
 import Utilidades
 import Data.List
-import Data.Char
 
 -- Tipos de datos y definiciones
 data Lienzo = MkLienzo { dimensiones :: (Int, Int),
@@ -64,7 +65,7 @@ dibujarPuntos lienzo@(MkLienzo (x, y) lista) ((x1, y1):xs) c
         where fueraDelLienzo = x <= x1 || y <= y1 || x1 < 0 || y1 < 0
 dibujarPuntos lienzo [] _ = lienzo
 
--- Funciones para dibujar una linea recta
+-- Funciones para dibujar una o varias lineas rectas
 -- Punto inicial -> Angulo -> Longitud -> Puntos de la linea
 obtenerLinea :: Posicion -> Float -> Int -> [Posicion]
 obtenerLinea (x,y) ang l
@@ -79,6 +80,21 @@ obtenerLinea (x,y) ang l
 -- Punto inicial -> Angulo -> Longitud -> Puntos de la linea
 dibujarLinea :: Lienzo -> Posicion -> Float -> Int -> Char -> Lienzo
 dibujarLinea lienzo pos ang l c = dibujarPuntos lienzo (obtenerLinea pos ang l) c
+
+{- Traza una linea entre dos puntos p1 y p2, dibujando con el caracter
+- especificado -}
+lineaEntreDosPuntos :: Lienzo -> Posicion -> Posicion -> Char -> Lienzo
+lineaEntreDosPuntos lienzo p1@(x1, y1) p2@(x2,y2) c = 
+    dibujarLinea lienzo p1 (aGrados alfa) hipotenusa c
+     where alfa = if y1 > y2 then a + pi else a 
+           hipotenusa = truncate $ sqrt $ fromIntegral ((x1 - x2)^2 + (y1 - y2)^2)
+           a = (atan $ (fromIntegral (x1-x2))/(fromIntegral (y2-y1)))
+
+-- Traza lineas entre los puntos especificados en la lista de posiciones
+dibujarLineas :: Lienzo -> [Posicion] -> Char -> Lienzo
+dibujarLineas lienzo lista@(p1@(x1, y1):p2@(x2, y2):ps) c =
+        dibujarLineas (lineaEntreDosPuntos lienzo p1 p2 c) (p2:ps) c
+dibujarLineas lienzo _ _ = lienzo
 
 -- Funciones para dibujar un circulo
 obtenerCirculo :: Posicion -> Int -> Int -> Int -> [Posicion]
@@ -134,15 +150,7 @@ clasificar :: Posicion -> [Posicion] -> [Posicion]
 clasificar (x, y) xs = sortBy (ordenTuplas) (filter (\(x1, _) -> x1 >= x) xs)
                         ++ reverse (sortBy (ordenTuplas) (filter (\(x1, _) -> x1 < x) xs))
 
-{- Traza una linea entre dos puntos p1 y p2, dibujando con el caracter
-- especificado -}
-lineaEntreDosPuntos :: Lienzo -> Posicion -> Posicion -> Char -> Lienzo
-lineaEntreDosPuntos lienzo p1@(x1, y1) p2@(x2,y2) c = 
-    dibujarLinea lienzo p1 (aGrados alfa) hipotenusa c
-     where alfa = if y1 > y2 then a + pi else a 
-           hipotenusa = truncate $ sqrt $ fromIntegral ((x1 - x2)^2 + (y1 - y2)^2)
-           a = (atan $ (fromIntegral (x1-x2))/(fromIntegral (y2-y1)))
-
+-- Funciones para dibujar poligonos
 obtenerPuntosPoligono :: Posicion -> Int -> Int -> [Posicion]
 obtenerPuntosPoligono p numLados apotema = 
     calcularPuntos centroPoligono radio anguloCentral anguloInicial numLados
@@ -158,16 +166,15 @@ calcularPuntos centro radio anguloCentral angulo numLados =
     (last . reverse $ obtenerLinea centro angulo radio) :
     (calcularPuntos centro radio anguloCentral (angulo + anguloCentral) (numLados-1))
 
-dibujarPoligono :: Lienzo -> [Posicion] -> Char -> Lienzo
-dibujarPoligono lienzo lista@(p1@(x1, y1):p2@(x2, y2):ps) c =
-    lineaEntreDosPuntos 
-        (dibujarPoligono (lineaEntreDosPuntos lienzo p1 p2 c) (p2:ps) c) (last lista) p1 c  
-dibujarPoligono lienzo _ _ = lienzo
+dibujarPoligono :: Bool -> Lienzo -> [Posicion] -> Char -> Lienzo
+dibujarPoligono contorno = if contorno then dibujarContorno
+                           else dibujarPoligonoLibre
 
-dibujarLineas :: Lienzo -> [Posicion] -> Char -> Lienzo
-dibujarLineas lienzo lista@(p1@(x1, y1):p2@(x2, y2):ps) c =
-        dibujarLineas (lineaEntreDosPuntos lienzo p1 p2 c) (p2:ps) c
-dibujarLineas lienzo _ _ = lienzo
+dibujarPoligonoLibre :: Lienzo -> [Posicion] -> Char -> Lienzo
+dibujarPoligonoLibre lienzo lista@(p1@(x1, y1):p2@(x2, y2):ps) c =
+    lineaEntreDosPuntos 
+        (dibujarPoligonoLibre (lineaEntreDosPuntos lienzo p1 p2 c) (p2:ps) c) (last lista) p1 c  
+dibujarPoligonoLibre lienzo _ _ = lienzo
 
 dibujarContorno :: Lienzo -> [Posicion] -> Char -> Lienzo
 dibujarContorno lienzo [] _ = lienzo
@@ -181,16 +188,17 @@ dibujarPoligonoRegular :: Lienzo -> Posicion -> Int -> Int -> Char -> Lienzo
 dibujarPoligonoRegular lienzo posInicial numLados apotema c =
     (dibujarContorno lienzo (obtenerPuntosPoligono posInicial numLados apotema) c)
 
-triangulizar :: Lienzo -> [Posicion] -> Char -> Lienzo
-triangulizar lienzo lista c = triangulizar' lienzo (sort lista) c
+-- Funciones para dibujar "strips" de triangulos
+dibujarStrip :: Lienzo -> [Posicion] -> Char -> Lienzo
+dibujarStrip lienzo lista c = triangularizar lienzo (sort lista) c
 
-triangulizar' :: Lienzo -> [Posicion] -> Char -> Lienzo
-triangulizar' lienzo (pos1:pos2:pos3:posiciones) c =
-    triangulizar' 
+triangularizar :: Lienzo -> [Posicion] -> Char -> Lienzo
+triangularizar lienzo (pos1:pos2:pos3:posiciones) c =
+    triangularizar 
         (lineaEntreDosPuntos 
          (lineaEntreDosPuntos 
           (lineaEntreDosPuntos lienzo pos1 pos2 c) 
          pos1 pos3 c)
         pos2 pos3 c)
         (pos2:pos3:posiciones) c
-triangulizar' lienzo _ _ = lienzo
+triangularizar lienzo _ _ = lienzo

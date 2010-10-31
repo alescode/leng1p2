@@ -6,18 +6,6 @@ reemplazar c i (x:xs)
            | i == 0 = (c:xs)
            | otherwise = x:(reemplazar c (i-1) xs)
 
---reemplazar c i l = reemplazar' c i l []
---    where reemplazar' c i (x:xs) acum
---           | i == 0 = reverse acum ++ (c:xs)
---           | otherwise = reemplazar' c (i-1) xs (x:acum)
---
---reemplazar e pos l = second $ foldl' f (0, [], l) l 
---                    where f (i, lista, t) x
---                             | i < 0 = (i, lista, t)
---                             | i == pos = (-1, foldl' (flip (:)) (e:tail t) lista, [])
---                             | otherwise = (i + 1, x:lista, tail t)
---                          second (_, x, _) = x
-
 aRadianes :: Float -> Float
 aRadianes = (* (pi/180))
 
