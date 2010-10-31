@@ -1,6 +1,5 @@
 module Utilidades where
 import Data.List
-import Debug.Trace
 
 reemplazar :: a -> Int -> [a] -> [a]
 reemplazar c i (x:xs)

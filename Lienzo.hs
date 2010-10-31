@@ -14,7 +14,6 @@ module Lienzo (Lienzo,
 
 import Utilidades
 import Data.List
-import Debug.Trace
 import Data.Char
 
 -- Tipos de datos y definiciones
@@ -81,6 +80,7 @@ obtenerLinea (x,y) ang l
 dibujarLinea :: Lienzo -> Posicion -> Float -> Int -> Char -> Lienzo
 dibujarLinea lienzo pos ang l c = dibujarPuntos lienzo (obtenerLinea pos ang l) c
 
+-- Funciones para dibujar un circulo
 obtenerCirculo :: Posicion -> Int -> Int -> Int -> [Posicion]
 obtenerCirculo (x,y) r ang fin
     | ang < fin =  posicionNueva : obtenerCirculo (x,y) r (ang + 1) fin
@@ -95,6 +95,7 @@ dibujarCirculo lienzo pos r c
     | r < 0 = error "El radio del circulo debe ser no negativo"
     | otherwise = dibujarPuntos lienzo (obtenerCirculo pos r 0 360) c
 
+-- Funciones que implementan llenado
 llenar :: Lienzo -> Posicion -> Char -> Lienzo
 llenar lienzo@(MkLienzo (x, y) lista) pos@(x1, y1) c
         | fueraDelLienzo = error "La posicion se encuentra fuera del lienzo"
@@ -116,6 +117,7 @@ llenar' lienzo@(MkLienzo (x, y) lista) c1 c2 pos@(x1, y1)
                   ) c1 c2 (x1, y1 - 1)
         where fueraDelLienzo = x <= x1 || y <= y1 || x1 < 0 || y1 < 0    
 
+-- Funciones para dibujar curvas
 eliminarPuntosInnecesarios :: Posicion -> [Posicion] -> [Posicion]
 eliminarPuntosInnecesarios (x, y) ((x1, y1):xs) 
     | x1 > x || x1 < 0 || y1 > y || y1 < 0 = eliminarPuntosInnecesarios (x, y) xs
@@ -141,6 +143,21 @@ lineaEntreDosPuntos lienzo p1@(x1, y1) p2@(x2,y2) c =
            hipotenusa = truncate $ sqrt $ fromIntegral ((x1 - x2)^2 + (y1 - y2)^2)
            a = (atan $ (fromIntegral (x1-x2))/(fromIntegral (y2-y1)))
 
+obtenerPuntosPoligono :: Posicion -> Int -> Int -> [Posicion]
+obtenerPuntosPoligono p numLados apotema = 
+    calcularPuntos centroPoligono radio anguloCentral anguloInicial numLados
+     where anguloAlCentro = -360 / (2* (fromIntegral numLados))
+           radio = round $ (fromIntegral apotema) / (cos $ pi / (fromIntegral numLados))
+           centroPoligono = last . reverse $ obtenerLinea p anguloAlCentro radio
+           anguloInicial = 90 - anguloAlCentro
+           anguloCentral = 360 / (fromIntegral numLados)
+
+calcularPuntos :: Posicion -> Int -> Float -> Float -> Int -> [Posicion]
+calcularPuntos _ _ _ _ 0 = []
+calcularPuntos centro radio anguloCentral angulo numLados = 
+    (last . reverse $ obtenerLinea centro angulo radio) :
+    (calcularPuntos centro radio anguloCentral (angulo + anguloCentral) (numLados-1))
+
 dibujarPoligono :: Lienzo -> [Posicion] -> Char -> Lienzo
 dibujarPoligono lienzo lista@(p1@(x1, y1):p2@(x2, y2):ps) c =
     lineaEntreDosPuntos 
@@ -155,8 +172,7 @@ dibujarLineas lienzo _ _ = lienzo
 dibujarContorno :: Lienzo -> [Posicion] -> Char -> Lienzo
 dibujarContorno lienzo [] _ = lienzo
 dibujarContorno lienzo lista c =
-    traceShow (listaPorAngulo) (lineaEntreDosPuntos
-        (dibujarLineas lienzo listaPorAngulo c) (last listaPorAngulo) p0 c)
+    lineaEntreDosPuntos (dibujarLineas lienzo listaPorAngulo c) (last listaPorAngulo) p0 c
      where listaOrdenada = sortBy (ordenTuplas) lista
            p0 = head listaOrdenada
            listaPorAngulo = p0 : (sortBy (ordenAngulo p0) (tail listaOrdenada))
@@ -178,18 +194,3 @@ triangulizar' lienzo (pos1:pos2:pos3:posiciones) c =
         pos2 pos3 c)
         (pos2:pos3:posiciones) c
 triangulizar' lienzo _ _ = lienzo
-
-obtenerPuntosPoligono :: Posicion -> Int -> Int -> [Posicion]
-obtenerPuntosPoligono p numLados apotema = 
-    calcularPuntos centroPoligono radio anguloCentral anguloInicial numLados
-     where anguloAlCentro = -360 / (2* (fromIntegral numLados))
-           radio = round $ (fromIntegral apotema) / (cos $ pi / (fromIntegral numLados))
-           centroPoligono = last . reverse $ obtenerLinea p anguloAlCentro radio
-           anguloInicial = 90 - anguloAlCentro
-           anguloCentral = 360 / (fromIntegral numLados)
-
-calcularPuntos :: Posicion -> Int -> Float -> Float -> Int -> [Posicion]
-calcularPuntos _ _ _ _ 0 = []
-calcularPuntos centro radio anguloCentral angulo numLados = 
-    (last . reverse $ obtenerLinea centro angulo radio) :
-    (calcularPuntos centro radio anguloCentral (angulo + anguloCentral) (numLados-1))
