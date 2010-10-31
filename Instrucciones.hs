@@ -32,8 +32,8 @@ interpretarComando (lienzo, c) (DibujarCurva pos r l) =
     (dibujarCurva lienzo pos r l c, c)
 interpretarComando (lienzo, c) (DibujarPoligono pos co) =
     (dibujarPoligono co lienzo pos c, c)
-interpretarComando (lienzo, c) (DibujarPoligonoRegular pos lados apotema) =
-    (dibujarPoligonoRegular lienzo pos lados apotema c, c)
+interpretarComando (lienzo, c) (DibujarPoligonoRegular pos numLados lado) =
+    (dibujarPoligonoRegular lienzo pos numLados lado c, c)
 
 interpretarBatch :: (Int, Int) -> [Instruccion] -> Lienzo
 interpretarBatch dim [] = lienzoVacio dim
