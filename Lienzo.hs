@@ -17,6 +17,7 @@ module Lienzo (Lienzo,
 
 import Utilidades
 import Data.List
+import Debug.Trace
 
 -- Tipos de datos y definiciones
 data Lienzo = MkLienzo { dimensiones :: (Int, Int),
@@ -153,10 +154,10 @@ clasificar (x, y) xs = sortBy (ordenTuplas) (filter (\(x1, _) -> x1 >= x) xs)
 
 -- Funciones para dibujar poligonos
 obtenerPuntosPoligono :: Posicion -> Int -> Int -> [Posicion]
-obtenerPuntosPoligono p numLados apotema = 
-    calcularPuntos centroPoligono radio anguloCentral anguloInicial numLados
+obtenerPuntosPoligono p numLados lado = 
+    traceShow radio (calcularPuntos centroPoligono radio anguloCentral anguloInicial numLados)
      where anguloAlCentro = -360 / (2* (fromIntegral numLados))
-           radio = round $ (fromIntegral apotema) / (cos $ pi / (fromIntegral numLados))
+           radio = round $ (fromIntegral lado) / (2 * (sin $ pi / (fromIntegral numLados)))
            centroPoligono = last . reverse $ obtenerLinea p anguloAlCentro radio
            anguloInicial = 90 - anguloAlCentro
            anguloCentral = 360 / (fromIntegral numLados)
@@ -186,8 +187,8 @@ dibujarContorno lienzo lista c =
            listaPorAngulo = p0 : (sortBy (ordenAngulo p0) (tail listaOrdenada))
 
 dibujarPoligonoRegular :: Lienzo -> Posicion -> Int -> Int -> Char -> Lienzo
-dibujarPoligonoRegular lienzo posInicial numLados apotema c =
-    (dibujarContorno lienzo (obtenerPuntosPoligono posInicial numLados apotema) c)
+dibujarPoligonoRegular lienzo posInicial numLados lado c =
+    (dibujarContorno lienzo (obtenerPuntosPoligono posInicial numLados lado) c)
 
 -- Funciones para dibujar "strips" de triangulos
 dibujarStrip :: Lienzo -> [Posicion] -> Char -> Lienzo
