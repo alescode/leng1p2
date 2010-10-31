@@ -37,6 +37,8 @@ interpretarComando (lienzo, c) (DibujarPoligonoRegular pos lados apotema) =
 
 interpretarBatch :: (Int, Int) -> [Instruccion] -> Lienzo
 interpretarBatch dim [] = lienzoVacio dim
+interpretarBatch dim lista = foldl realizarInstruccion (lienzoVacio (dim), '\0') lista
+    where realizarInstruccion (lienzo,c) instr = interpretarComando (lienzo, c) instr 
 --interpretarBatch dim [i] = interpretarComando (lienzoVacio dim)
 
 --dibujarCirculo (dibujarCirculo (llenar (dibujarCirculo (llenar (lienzoVacio (30,100)) (15,50) 'c') (15,50) 14 ' ') (15,50) ' ') (3, 33) 6 ' ') (3, 67) 6 ' '
