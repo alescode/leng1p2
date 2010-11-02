@@ -1,3 +1,20 @@
 -- ASCII Art
+Alejandro Machado 07-41138
+Aldo Porco 07-41378
 Universidad Simón Bolívar
+Lenguajes de Programación
+
+Se utilizó el intérprete GHC.
+
+Decisiones de diseño:
+Exportaciones extra:
+    obtenerLinea y lineaEntreDosPuntos --> para facilitar la implementación de las funciones
+        de polígonos en el módulo Geometría.
+    lienzoNuevo --> para permitir la creación de un lienzo con otro
+        caracter que no sea el ' ' por defecto. 
+    dibujarCurva --> se decidió implementar en Lienzo porque el código es similar
+        a dibujarCirculo y depende de algunas funciones que usa dibujarCirculo.
+
+
+    
 

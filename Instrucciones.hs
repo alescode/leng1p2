@@ -1,7 +1,9 @@
-module Instrucciones where
+module Instrucciones (interpretarBatch,
+                      leerInstruccion, 
+                      leerDimensiones) where
 
 import Lienzo
-import Debug.Trace
+import Geometria
 
 -- Tipos de datos para Instruccion
 type Magnitud = Int
@@ -29,6 +31,7 @@ leerInstruccion :: String -> Instruccion
 leerInstruccion = leerI . words
     where
       leerI ("color":x:[]) = EstablecerColor $ head x
+      leerI ("color":[]) = EstablecerColor ' ' -- establece el espacio (borrado)
       leerI ("get":x:y:[]) = ObtenerColor (read x, read y)
       leerI ("point":x:y:[]) = DibujarPunto (read x, read y)
       leerI ("line":x1:y1:x2:y2:[]) = 
@@ -50,7 +53,11 @@ leerInstruccion = leerI . words
       leerI ("triangularize":n:puntos) 
           | (length puntos) /= 2*(read n) = error "Error de formato en triangularize"
           | otherwise = Triangularizar (leerPuntos puntos [])
-      leerI _ = Nada
+      leerI ("clean":[]) = Limpiar
+      leerI ("end":[]) = Nada         -- Manejo de instrucciones especiales
+      leerI ("dim":_:_:[]) = Nada
+      leerI x = error $ foldl1 (++) 
+                ["Error de formato en el archivo: linea ", show $ unwords x]
 
 leerPuntos :: [String] -> [(Int, Int)] -> [(Int, Int)]
 leerPuntos (x:y:puntos) acum = leerPuntos puntos ((read x, read y):acum)
