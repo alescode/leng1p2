@@ -31,7 +31,7 @@ leerInstruccion :: String -> Instruccion
 leerInstruccion = leerI . words
     where
       leerI ("color":x:[]) = EstablecerColor $ head x
-      leerI ("color":[]) = EstablecerColor ' ' -- establece el espacio (borrado)
+      leerI ("color":[]) = EstablecerColor ' ' -- establece el color ' '
       leerI ("get":x:y:[]) = ObtenerColor (read x, read y)
       leerI ("point":x:y:[]) = DibujarPunto (read x, read y)
       leerI ("line":x1:y1:x2:y2:[]) = 

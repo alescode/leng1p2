@@ -15,6 +15,10 @@ Exportaciones extra:
     dibujarCurva --> se decidió implementar en Lienzo porque el código es similar
         a dibujarCirculo y depende de algunas funciones que usa dibujarCirculo.
 
-
-    
+Archivos extra:
+    Se decidió incluir funciones que no tienen que ver directamente con el tipo de 
+    datos Lienzo en el archivo Utilidades.
+    Asimismo, las funciones que no pertenecen a Instruccion (pero no pueden ser
+    exportadas por Lienzo según el enunciado) fueron colocadas en un nuevo archivo
+    llamado Geometria. Estas son las funciones relativas a polígonos y triangularizar.
 
