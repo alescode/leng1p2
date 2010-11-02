@@ -22,3 +22,32 @@ Archivos extra:
     exportadas por Lienzo según el enunciado) fueron colocadas en un nuevo archivo
     llamado Geometria. Estas son las funciones relativas a polígonos y triangularizar.
 
+Manejo de aproximaciones en valores punto flotante:
+    Se decidió redondear los valores de retorno de las funciones cuya respuesta
+    eran puntos para graficar círculos o curvas, ya que su presentación es bastante
+    más similar a un círculo real que truncar el valor.
+    Se decidió truncar los valores de retorno en las funciones para dibujar
+    líneas rectas para mantener cierta consistencia en el dibujo y no
+    "graficar líneas quebradas" en las que pudiera haber huecos.
+
+DibujarCurva:
+    Como se especificó en la segunda entrega, dibujarCurva recibe como
+    tercer parámetro la cantidad de caracteres que se desea graficar,
+    y no el ángulo en el cual se desea dibujar la curva.
+
+Manejo de Int/Integer:
+    En el enunciado se menciona el tipo de datos Integer en la firma
+    de muchos tipos y funciones. Se decidió utilizar el tipo de datos Int
+    única y exclusivamente, por las siguientes razones:
+
+    1) No se espera trabajar con lienzos enormes, la idea del proyecto
+    es poder dibujar en pantalla líneas y figuras. Es poco probable
+    que se necesiten enteros mayores a 2^31-1 para representar lienzos.
+    2) Compatibilidad completa con funciones útiles de Haskell, como
+    take, drop, length, etc.
+    3) La máquina es considerablemente más rápida manejando elementos
+    de tipo Int que elementos del tipo Integer [1].
+
+Referencias:
+    [1] http://en.wikipedia.org/wiki/Arbitrary-precision_arithmetic#Implementation_issues
+
